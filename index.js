@@ -33,6 +33,24 @@ async function run() {
       const result = await productCollection.findOne(query);
       res.send(result);
     });
+
+    app.put("/purchase/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const product = req.body;
+      const updateDoc = {
+        $set: {
+          availableQuantity: product.availableQuantity,
+        },
+      };
+      const result = await productCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
   } finally {
     //
   }
