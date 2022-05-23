@@ -22,6 +22,7 @@ const productCollection = client.db("orbitX-products").collection("products");
 const userCollection = client.db("orbitX-products").collection("user");
 const usersCollection = client.db("orbitX-products").collection("users");
 const ordersCollection = client.db("orbitX-products").collection("orders");
+const reviewCollection = client.db("orbitX-products").collection("review");
 
 function verifyJWT(req, res, next) {
   const authorization = req.headers.authorization;
@@ -125,6 +126,18 @@ async function run() {
       } else {
         return res.status(403).send({ message: "Forbidden access" });
       }
+    });
+
+    app.post("/review", verifyJWT, async (req, res) => {
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    });
+
+    app.get("/review", async (req, res) => {
+      const review = {};
+      const result = await reviewCollection.find(review).toArray();
+      res.send(result);
     });
   } finally {
     //
