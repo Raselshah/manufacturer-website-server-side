@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const app = express();
+
 const port = process.env.PORT || 5000;
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
@@ -17,7 +19,8 @@ const client = new MongoClient(uri, {
 });
 
 const productCollection = client.db("orbitX-products").collection("products");
-const userCollection = client.db("orbitX-products").collection("users");
+const userCollection = client.db("orbitX-products").collection("user");
+const usersCollection = client.db("orbitX-products").collection("users");
 async function run() {
   try {
     await client.connect();
@@ -62,6 +65,25 @@ async function run() {
       const email = req.params.email;
       const result = await userCollection.findOne({ email: email });
       res.send(result);
+    });
+
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN, {
+        expiresIn: "1h",
+      });
+      res.send({ result, token });
     });
   } finally {
     //
