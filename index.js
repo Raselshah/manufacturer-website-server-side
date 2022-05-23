@@ -17,6 +17,7 @@ const client = new MongoClient(uri, {
 });
 
 const productCollection = client.db("orbitX-products").collection("products");
+const userCollection = client.db("orbitX-products").collection("users");
 async function run() {
   try {
     await client.connect();
@@ -49,6 +50,17 @@ async function run() {
         updateDoc,
         options
       );
+      res.send(result);
+    });
+
+    app.post("/userInfo", async (req, res) => {
+      const updateUserInfo = req.body;
+      const result = await userCollection.insertOne(updateUserInfo);
+      res.send(result);
+    });
+    app.get("/userInfo/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await userCollection.findOne({ email: email });
       res.send(result);
     });
   } finally {
