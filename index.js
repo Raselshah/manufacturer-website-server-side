@@ -21,6 +21,23 @@ const client = new MongoClient(uri, {
 const productCollection = client.db("orbitX-products").collection("products");
 const userCollection = client.db("orbitX-products").collection("user");
 const usersCollection = client.db("orbitX-products").collection("users");
+const ordersCollection = client.db("orbitX-products").collection("orders");
+
+function verifyJWT(req, res, next) {
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res.status(401).send({ message: "UnAuthorized" });
+  }
+  const token = authorization.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
+
 async function run() {
   try {
     await client.connect();
@@ -84,6 +101,30 @@ async function run() {
         expiresIn: "1h",
       });
       res.send({ result, token });
+    });
+
+    app.get("/user", async (req, res) => {
+      const query = {};
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.post("/orders", async (req, res) => {
+      const order = req.body;
+      const result = await ordersCollection.insertOne(order);
+      res.send(result);
+    });
+
+    app.get("/orders", verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      const filter = { email: email };
+      const decodedEmail = req.decoded.email;
+      if (email === decodedEmail) {
+        const order = await ordersCollection.find(filter).toArray();
+        return res.send(order);
+      } else {
+        return res.status(403).send({ message: "Forbidden access" });
+      }
     });
   } finally {
     //
