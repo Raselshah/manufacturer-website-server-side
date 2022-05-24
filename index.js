@@ -1,10 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+require("dotenv").config();
 const app = express();
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 
 const port = process.env.PORT || 5000;
-require("dotenv").config();
+
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 // middleware
@@ -55,6 +57,18 @@ async function run() {
       }
     };
 
+    // const verifyUser = async (req, res, next) => {
+    //   const requester = req.decoded.email;
+    //   const requesterAccount = await usersCollection.findOne({
+    //     email: requester,
+    //   });
+    //   if (requesterAccount.role === " ") {
+    //     next();
+    //   } else {
+    //     return res.status(403).send({ message: "Forbidden access" });
+    //   }
+    // };
+
     app.get("/home", async (req, res) => {
       const query = {};
       const result = await productCollection.find(query).toArray();
@@ -86,9 +100,14 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/userInfo", async (req, res) => {
+    app.put("/userInfo/:email", async (req, res) => {
+      const email = req.params.email;
       const updateUserInfo = req.body;
-      const result = await userCollection.insertOne(updateUserInfo);
+      const filter = { email: email };
+      const updateDoc = {
+        $set: updateUserInfo,
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
     app.get("/userInfo/:email", async (req, res) => {
@@ -168,6 +187,34 @@ async function run() {
       const user = await usersCollection.findOne({ email: email });
       const isAdmin = user.role === "admin";
       res.send({ admin: isAdmin });
+    });
+
+    app.delete("/removeItem/:id", verifyJWT, async (req, res) => {
+      const query = req.params.id;
+      const id = { _id: ObjectId(query) };
+      const result = await ordersCollection.deleteOne(id);
+      res.send(result);
+    });
+
+    app.get("/payment/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await ordersCollection.findOne(query);
+      res.send(result);
+    });
+
+    // payment api
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+      const product = req.body;
+      const price = product.price;
+      const amount = price * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+
+      res.send({ clientSecret: paymentIntent.client_secret });
     });
   } finally {
     //
