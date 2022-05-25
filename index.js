@@ -222,6 +222,7 @@ async function run() {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const payment = req.body;
+      console.log(payment);
       const updateDoc = {
         $set: {
           paid: true,
@@ -249,6 +250,24 @@ async function run() {
       const result = await productCollection.deleteOne(filter);
       res.send(result);
     });
+
+    app.get("/allOrders", verifyJWT, verifyAdmin, async (req, res) => {
+      const query = {};
+      const result = await ordersCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.delete(
+      "/deleteOrders/:id",
+      verifyJWT,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) };
+        const result = await ordersCollection.deleteOne(filter);
+        res.send(result);
+      }
+    );
   } finally {
     //
   }
