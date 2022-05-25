@@ -108,12 +108,13 @@ async function run() {
       const updateDoc = {
         $set: updateUserInfo,
       };
-      const result = await userCollection.updateOne(filter, updateDoc);
+      const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
     app.get("/userInfo/:email", async (req, res) => {
       const email = req.params.email;
-      const result = await userCollection.findOne({ email: email });
+      const filter = { email: email };
+      const result = await usersCollection.findOne(filter);
       res.send(result);
     });
 
@@ -265,6 +266,18 @@ async function run() {
         const id = req.params.id;
         const filter = { _id: ObjectId(id) };
         const result = await ordersCollection.deleteOne(filter);
+        res.send(result);
+      }
+    );
+
+    app.delete(
+      "/adminRemove/:email",
+      verifyJWT,
+      verifyAdmin,
+      async (req, res) => {
+        const email = req.params.email;
+        const filter = { email: email };
+        const result = await usersCollection.deleteOne(filter);
         res.send(result);
       }
     );
