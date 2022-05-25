@@ -25,6 +25,7 @@ const userCollection = client.db("orbitX-products").collection("user");
 const usersCollection = client.db("orbitX-products").collection("users");
 const ordersCollection = client.db("orbitX-products").collection("orders");
 const reviewCollection = client.db("orbitX-products").collection("review");
+const paymentCollection = client.db("orbitX-products").collection("payment");
 
 function verifyJWT(req, res, next) {
   const authorization = req.headers.authorization;
@@ -215,6 +216,31 @@ async function run() {
       });
 
       res.send({ clientSecret: paymentIntent.client_secret });
+    });
+
+    app.patch("/orders/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const payment = req.body;
+      const updateDoc = {
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId,
+        },
+      };
+      const updatePaymentInfo = await ordersCollection.updateOne(
+        filter,
+        updateDoc
+      );
+
+      const result = await paymentCollection.insertOne(payment);
+      res.send(updateDoc);
+    });
+
+    app.post("/addProduct", verifyJWT, async (req, res) => {
+      const newProduct = req.body;
+      const product = await productCollection.insertOne(newProduct);
+      res.send(product);
     });
   } finally {
     //
