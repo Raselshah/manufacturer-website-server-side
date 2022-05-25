@@ -242,6 +242,13 @@ async function run() {
       const product = await productCollection.insertOne(newProduct);
       res.send(product);
     });
+
+    app.delete("/product/:id", verifyJWT, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await productCollection.deleteOne(filter);
+      res.send(result);
+    });
   } finally {
     //
   }
