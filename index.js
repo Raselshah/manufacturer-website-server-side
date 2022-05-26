@@ -288,9 +288,9 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("orbitX connect");
+  res.send("orbitX connect db");
 });
 
 app.listen(port, () => {
-  console.log("listen db", port);
+  console.log("listen db to", port);
 });
